@@ -8,5 +8,9 @@
 #SBATCH --cpus-per-task=2               # Number of CPUs per task
 #SBATCH --mem=16G                        # Memory per node (16 GB)
 
-# Run the Python script
-python src/calculate_bleu_scores.py
+# path for input and output files
+INPUT_FILE=/path/to/src/processed_txt2onto_descriptions_stem-False_lemmatize-False.tsv
+OUTPUT_FILE=/path/to/results/tifours/bleu_scores_opt.csv.gz
+
+# Run the Python script with argparse
+python src/calculate_bleu_scores.py --input "$INPUT_FILE" --output "$OUTPUT_FILE"
