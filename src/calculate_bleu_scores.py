@@ -15,31 +15,31 @@ Inputs:
 
 Outputs:
     - A compressed CSV file containing the BLEU scores for valid sample pairs.
-
-Requirements:
-    - pandas
-    - nltk
+    
+Author: Souha Tifour  
+Date: 2024-12-18  
 """
 
 import pandas as pd
 from itertools import combinations
 from nltk.translate.bleu_score import sentence_bleu
+from argparse import ArgumentParser  
 
-# Path to the processed data file
-file_path = '/path/to/src/processed_txt2onto_descriptions_stem-False_lemmatize-False.tsv'
 
-# Load the processed data
-df = pd.read_csv(file_path, sep='\t')
-df.columns = ['Processed_Description', 'GSM', 'GSE']  # Rename columns for clarity
-
+# argument parser for input and output files:
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Calculate BLEU scores for pairwise text comparisons.")
+    parser.add_argument("--input", required=True, type=str, help="Path to the input TSV file with processed descriptions.")
+    parser.add_argument("--output", required=True, type=str, help="Path to the output compressed CSV file.")
+    return parser.parse_args() 
 # Function to calculate the BLEU score for a pair of rows
-def calculate_bleu_pair(row1, row2):
+def calculate_bleu_pair(row1:pd.Series, row2:pd.Series):
     """
     Calculate BLEU score between two text descriptions.
 
     Args:
-        row1 : First row containing 'Processed_Description' and GSM.
-        row2 : Second row containing 'Processed_Description' and GSM.
+        row1 (pd.Series) : First row containing 'Processed_Description' and GSM.
+        row2 (pd.Series) : Second row containing 'Processed_Description' and GSM.
 
     Returns:
         dict: Dictionary with GSM identifiers and BLEU score.
@@ -53,24 +53,33 @@ def calculate_bleu_pair(row1, row2):
         'BLEU': bleu
     }
 
-# List to store BLEU scores for valid pairs
-bleu_scores = []
+def main():
+    
+    args= parse_arguments
+    # Load the processed data
+    df = pd.read_csv(args.input, sep='\t')
+    df.columns = ['Processed_Description', 'GSM', 'GSE']  # Rename columns for clarity
 
-# Iterate over all unique combinations of rows
-for (i, row1), (j, row2) in combinations(df.iterrows(), 2):
-    # Only calculate BLEU for pairs belonging to different GSEs
-    if row1['GSE'] != row2['GSE']:
-        score = calculate_bleu_pair(row1, row2)
-        bleu_scores.append(score)
+    # List to store BLEU scores for valid pairs
+    bleu_scores = []
 
-# Convert the list of BLEU scores to a DataFrame
-bleu_scores_df = pd.DataFrame(bleu_scores)
+    # Iterate over all unique combinations of rows
+    for (i, row1), (j, row2) in combinations(df.iterrows(), 2):
+        # Only calculate BLEU for pairs belonging to different GSEs
+        if row1['GSE'] != row2['GSE']:
+            score = calculate_bleu_pair(row1, row2)
+            bleu_scores.append(score)
 
-# Output file path
-output_file = '/path/to/results/tifours/bleu_scores_opt.csv.gz'
+    # Convert the list of BLEU scores to a DataFrame
+    bleu_scores_df = pd.DataFrame(bleu_scores)
 
-# Save the BLEU scores DataFrame to a compressed CSV file
-bleu_scores_df.to_csv(output_file, index=False, compression='gzip')
+    # Output file path
+    bleu_scores_df.to_csv(args.output, index=False, compression='gzip')
 
-# Print completion message
-print(f"BLEU scores have been saved to {output_file}")
+    # Save the BLEU scores DataFrame to a compressed CSV file
+    bleu_scores_df.to_csv(output_file, index=False, compression='gzip')
+
+    # Print completion message
+    print(f"BLEU scores have been saved to {output_file}")
+if __name__ == "__main__":
+    main()
